@@ -9,7 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b29e98153ec2fbd44b8f7da1b41194e8, type: 3}
+  m_Script: {fileID: 11500000, guid: 3b6c78763ff4e674f88fa40bb5c1ede0, type: 3}
   m_Name: SpineSettings
   m_EditorClassIdentifier: 
   defaultScale: 0.01
@@ -19,7 +19,7 @@ MonoBehaviour:
   defaultInstantiateLoop: 1
   showHierarchyIcons: 1
   setTextureImporterSettings: 1
-  textureSettingsReference: Assets/Spine/Editor/spine-unity/Editor/ImporterPresets/PMATexturePreset.preset
+  textureSettingsReference: Assets/Plugins/Spine/Editor/spine-unity/Editor/ImporterPresets/PMATexturePreset.preset
   blendModeMaterialMultiply: {fileID: 0}
   blendModeMaterialScreen: {fileID: 0}
   blendModeMaterialAdditive: {fileID: 0}

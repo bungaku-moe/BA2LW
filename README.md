@@ -1,146 +1,67 @@
-# ba2wall
+# Blue Archive to Live Wallpaper (BA2LW)
 
-还原学生大厅互动 的 互动壁纸
+## Overview
 
-- [纯框架](https://github.com/Tualin14/ba2wall/releases)
-- [wall engine 合集](https://steamcommunity.com/sharedfiles/filedetails/?id=2875378435)
+This project is intended to restore [Blue Archive](https://bluearchive.nexon.com/ "Visit Blue Archive official website") Memorial Lobby and used it as interactive Live Wallpaper.
 
-# 0Data
+This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall/releases) by [Tualin14](https://github.com/Tualin14) that no longer maintained. You can checkout his(?) work at [Steam Wallpaper Engine Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2875378435 "Visit Tualin14 Workshop").
 
-- 0Data 素材存放文件夹（用框架需在根目录新建此文件夹
-  - Voice 语音位置
-  - Setting.json 设置文件
-  - Theme.ogg 背景音乐（如有必要需重命名为 Theme.ogg
-  - 其余素材
+## Game Data Structure
 
-# Setting.json
+- `Data/` All required data
+  - `Voice/` Voice assets
+  - `settings.json` Settings file
+  - `Theme.ogg` Background music
 
-- student 学生文件名
-- debug 调试，查看触发位置
-- rotation 摆正人物，可以给类似心奈的学生使用
-- scale 缩放
-- lookRange 注释范围，形状为边与两眼平行的正方形
-- pat
-    - range 摸头范围，形状为与两眼平行的线
-    - somethingWrong 如果摸头没有跟随鼠标移动，则设置此为true
-- imageList 图片列表，有多少写多少
-- bgm
-  - enable 若想静音 bgm 可直接关闭，节约一点内存
-  - volume 音量 0.0~1.0
-- se 音效，少数壁纸有环境音，如佳代子
-  - enable 启用音效
-  - name 音效文件名
-  - volume 音量 0.0~1.0
-- talk
-    - volume 音量 0.0~1.0
-    - onlyTalk 有些学生声音事件没有具体指明，都为 Talk 事件时开启。false 没声音改成 true 就行
-    - maxIndex 语音动画数
-- bone
-  - eyeL 左眼根骨骼名
-  - eyeR 右眼根骨骼名
-  - halo 光环根骨骼名
-  - neck 脖子根骨骼名
-- bg 背景如果也是动画的设置，如星野，柚子
-  - isSpine 背景是否也为动画
-  - name 背景图片名
-  - state
-    - more 除默认状态外，是否还有其它状态。如星野背景还有鲸鱼运动的动画
-    - name 其它状态名
-  - imageList 背景图片列表，有多少写多少
+## settings.json Contents
 
-<details>
-<summary>设置类型</summary>
-<pre>
-[Serializable]
-public class Setting
-{
-    public string student;
-    public bool debug;
-    public bool rotation;
-    public float scale;
-    public float lookRange;
-    public Pat pat;
-    public Bgm bgm;
-    public Se se;
-    public Talk talk;
-    public Bone bone;
-    public Bg bg;
-
-    public List<string> imageList = new List<string>();
-
-    [Serializable]
-    public class Bgm
-    {
-        public bool enable;
-        public float volume;
-    }
-
-    [Serializable]
-    public class Pat
-    {
-        public float range;
-        public bool somethingWrong;
-    }
-
-    [Serializable]
-    public class Se
-    {
-        public bool enable;
-        public string name;
-        public float volume;
-    }
-
-    [Serializable]
-    public class Talk
-    {
-        public float volume;
-        public bool onlyTalk;
-        public int maxIndex;
-        public List<string> voiceList = new List<string>();
-    }
-
-    [Serializable]
-    public class Bone
-    {
-        public string eyeL;
-        public string eyeR;
-        public string halo;
-        public string neck;
-    }
-
-    [Serializable]
-    public class Bg
-    {
-        public bool isSpine;
-        public string name;
-        public State state;
-        public List<string> imageList = new List<string>();
-    }
-
-    [Serializable]
-    public class State
-    {
-        public bool more;
-        public string name;
-    }
-}
-</pre>
-</details>
+- `student` student file name
+- `debug` Debug, check the trigger position
+- `rotation` Straighten the characters, it can be used by students like Xinnai
+- `scale` zoom
+- `lookRange` Annotation range, in the shape of a square with sides parallel to the eyes
+- `pat`
+  - `range` Touch the area of the head, shaped as a line parallel to the eyes
+  - `somethingWrong` Set this to true if the touch head does not follow the mouse movement
+- `imageList` List of pictures, write as many as there are
+- `bgm`
+  - `enable` If you want to mute bgm, you can turn it off directly to save a little memory
+  - `volume` Volume 0.0~1.0
+- `se` Sound effects, a few wallpapers have ambient sounds, such as Kayoko
+  - `enable` enable sound
+  - `name` sound file name
+  - `volume` Volume 0.0~1.0
+- `talk`
+  - `volume` Volume 0.0~1.0
+  - `onlyTalk` Some student sound events are not specifically specified, and they are all turned on for Talk events. If there is no sound, change it to true.
+  - `maxIndex` Number of voice animations
+- `bone`
+  - `eyeL` Root bone name of left eye
+  - `eyeR` Right eye root bone name
+  - `halo` Aura Root Bone Name
+  - `neck` neck bone name
+- `bg` If the background is also an animation setting, such as Hoshino, Yuzu
+  - `isSpine` Whether the background is also animated
+  - `name` background image name
+  - `state`
+    - `more` Whether there are other states besides the default state. Such as star field background and animation of whale movement
+    - `name` other state names
+  - `imageList` List of background images, write as many as there are
 
 ---
 
-1. 骨骼名以 debug 打开程序看左侧显示
-2. 打开程序互动范围覆盖正确即可
-3. 因为这些文件并不遵守一定的命名规范。
+1. Open the program with debug to see the display on the left
+2. Open the program and the interaction range is correct.
+3. Because these files do not follow certain naming conventions.
 
-   以光环为例，一般根骨骼命名为 Halo，Halo_Root,Halo_01
+   Take halo as an example, the general root bone is named Halo, Halo_Root, Halo_01
 
-4. 有左右眼命名相反情况，如白子
+4. There are cases where the left and right eyes are named oppositely, such as Baizi
 
-## 几个学生设置示例
+## Student Setup Examples
 
 <details>
-<summary>小春（人物摆正</summary>
+<summary>Koharu</summary>
 <pre>
 {
     "student": "Koharu_home",
@@ -171,7 +92,7 @@ public class Setting
 </details>
 
 <details>
-<summary>佳代子（背景有雨声</summary>
+<summary>Kayoko (with the sound of rain in the background)</summary>
 <pre>
 {
     "student": "Kayoko_home",
@@ -207,7 +128,7 @@ public class Setting
 </details>
 
 <details>
-<summary>星野（背景也是动画</summary>
+<summary>Hoshino (the background is animated)</summary>
 <pre>
 {
     "student": "Hoshino_home",
@@ -249,7 +170,7 @@ public class Setting
 </details>
 
 <details>
-<summary>日步美（解决摸头不随鼠标移动</summary>
+<summary>Hifumi (to solve the problem that the touch head does not move with the mouse)</summary>
 <pre>
 {
     "student": "Hihumi_home",
@@ -283,11 +204,20 @@ public class Setting
 }</pre>
 </details>
 
-# Credits
+## Credits
 
-- [spine-unity](http://zh.esotericsoftware.com/spine-unity)
-- [UnitySkipSplash](https://github.com/psygames/UnitySkipSplash)
+- [spine-unity](http://en.esotericsoftware.com/spine-unity-download "Visit spine-unity official website")
 
-# Licence
+## License
 
-GPL-3.0 © [Tualin14](https://github.com/Tualin14/ba2wall)
+This project is licensed under GNU GPL 3.0.
+
+For more information about the GNU General Public License version 3.0 (GNU GPL 3.0), please refer to the official GNU website: <https://www.gnu.org/licenses/gpl-3.0.html>
+
+## Disclaimer
+
+This project is not affiliated with Nexon, NEXON Games Co., Ltd. nor any their affiliator.
+
+This project is intended only as a tool for fun. Any game assets and resources related to Blue Archive used in this project is property and copyright of those respective authors.
+
+[Blue Archive](https://bluearchive.nexon.com/ "Visit Blue Archive official website") is property dan copyright of Nexon, NEXON Games Co., Ltd.
