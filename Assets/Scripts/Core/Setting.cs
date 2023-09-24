@@ -6,26 +6,18 @@ namespace BA2LW.Core
     [Serializable]
     public class Setting
     {
-        public string student;
         public bool debug;
+        public string student;
         public bool rotation;
         public float scale;
         public float lookRange;
-        public Pat pat;
-        public Bgm bgm;
-        public Se se;
-        public Talk talk;
+        public List<string> imageList = new List<string>();
         public Bone bone;
         public Bg bg;
-
-        public List<string> imageList = new List<string>();
-
-        [Serializable]
-        public class Bgm
-        {
-            public bool enable;
-            public float volume;
-        }
+        public Pat pat;
+        public Bgm bgm;
+        public Sfx sfx;
+        public Talk talk;
 
         [Serializable]
         public class Pat
@@ -35,7 +27,15 @@ namespace BA2LW.Core
         }
 
         [Serializable]
-        public class Se
+        public class Bgm
+        {
+            public bool enable;
+            public float volume;
+            public string clip;
+        }
+
+        [Serializable]
+        public class Sfx
         {
             public bool enable;
             public string name;
