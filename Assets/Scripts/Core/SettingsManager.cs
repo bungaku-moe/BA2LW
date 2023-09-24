@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using BA2LW.Serialization;
 using BA2LW.Utils;
 using UnityEngine;
 
@@ -8,25 +10,58 @@ namespace BA2LW.Core
     public class SettingsManager : Singleton<SettingsManager>
     {
         const string DATA_DIRECTORY = "Data";
+        const string CONFIG_FILE = "config.json";
         const string SETTINGS_FILE = "settings.json";
 
+        /// <summary>
+        /// Root path of Spine data.
+        /// </summary>
+        /// <value></value>
         public string dataPath { get; private set; }
+
+        /// <summary>
+        /// Global configuration file path.
+        /// </summary>
+        /// <value></value>
+        public string configPath { get; private set; }
+
+        /// <summary>
+        /// Spine settings path.
+        /// </summary>
+        /// <value></value>
         public string settingsPath { get; private set; }
-        public Setting settings { get; private set; }
+
+        /// <summary>
+        /// The root directory of currently  active wallpaper.
+        /// </summary>
+        /// <value></value>
+        public string currentWallpaperPath { get; private set; }
+
+        /// <summary>
+        /// Global configuration data.
+        /// </summary>
+        /// <value></value>
+        public GlobalConfig config { get; private set; }
+
+        /// <summary>
+        /// Spine settings data.
+        /// </summary>
+        /// <value></value>
+        public SpineSettings settings { get; private set; }
 
         void Awake()
         {
             dataPath = Path.Combine(GetRootPath(), DATA_DIRECTORY);
-            settingsPath = Path.Combine(dataPath, SETTINGS_FILE);
-            Initialize();
+            configPath = Path.Combine(dataPath, CONFIG_FILE);
+
+            GetGlobalConfig();
         }
 
-        async void Initialize()
+        void Initialize()
         {
-            Debug.Log($"Getting {settingsPath}...");
-            string setting = await WebRequestHelper.GetTextData(settingsPath);
-            settings = JsonUtility.FromJson<Setting>(setting);
-            Debug.Log($"Successfully get {settingsPath}.");
+            currentWallpaperPath = Path.Combine(dataPath, config.wallpaper);
+            GetSpineSettings();
+            SetFrameRate(config.fps);
         }
 
         /// <summary>
@@ -44,6 +79,52 @@ namespace BA2LW.Core
             string path = Directory.GetParent(Application.dataPath)!.ToString();
 #endif
             return path;
+        }
+
+        async void GetGlobalConfig()
+        {
+            try
+            {
+                Debug.Log($"[GET] Get global configuration: {configPath}");
+
+                string conf = await WebRequestHelper.GetTextData(configPath);
+                config = JsonUtility.FromJson<GlobalConfig>(conf);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[ERROR] Failed to get global configuration! {ex.Message}");
+            }
+            finally
+            {
+                Debug.Log("[OK] Successfully get global configuration.");
+                Initialize();
+            }
+        }
+
+        async void GetSpineSettings()
+        {
+            settingsPath = Path.Combine(currentWallpaperPath, SETTINGS_FILE);
+
+            try
+            {
+                Debug.Log($"[GET] Get Spine settings: {settingsPath}...");
+
+                string setting = await WebRequestHelper.GetTextData(settingsPath);
+                settings = JsonUtility.FromJson<SpineSettings>(setting);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[ERROR] Failed to get Spine settings! {ex.Message}");
+            }
+            finally
+            {
+                Debug.Log("[OK] Successfully get Spine settings.");
+            }
+        }
+
+        void SetFrameRate(int fps)
+        {
+            Application.targetFrameRate = fps;
         }
     }
 }

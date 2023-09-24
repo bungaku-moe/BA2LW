@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
+using BA2LW.Serialization;
 using BA2LW.Utils;
 using Spine;
 using Spine.Unity;
@@ -87,7 +87,8 @@ namespace BA2LW.Core
         RectTransform m_BoneIndicatorPrefab;
 
         SettingsManager settingsManager;
-        Setting settings;
+        GlobalConfig config;
+        SpineSettings settings;
 #endregion
 
 #region Initialization
@@ -99,22 +100,19 @@ namespace BA2LW.Core
 
         void Start()
         {
+            config = settingsManager.config;
             settings = settingsManager.settings;
-            InitComponents();
-            Initialize();
-        }
 
-        void InitComponents()
-        {
-            m_BGMAudioSource.gameObject.SetActive(settings.bgm.enable);
-            m_SFXAudioSource.gameObject.SetActive(settings.sfx.enable);
-            m_VoiceAudioSource.gameObject.SetActive(settings.talk != null);
-            m_DebugWindow.gameObject.SetActive(settings.debug);
+            Initialize();
         }
 
         async void Initialize()
         {
             Debug.Log("Initializing...");
+            m_BGMAudioSource.gameObject.SetActive(settings.bgm.enable);
+            m_SFXAudioSource.gameObject.SetActive(settings.sfx.enable);
+            m_VoiceAudioSource.gameObject.SetActive(settings.talk != null);
+            m_DebugWindow.gameObject.SetActive(config.debug);
 
             // Init properties value
             totalVoice = settings.talk.maxIndex;
@@ -125,7 +123,7 @@ namespace BA2LW.Core
             if (settings.bgm.enable)
             {
                 Debug.Log("Setup & Cache BGM...");
-                string bgmPath = Path.Combine(settingsManager.dataPath, settings.bgm.clip);
+                string bgmPath = Path.Combine(settingsManager.currentWallpaperPath, settings.bgm.clip);
 
                 // Cache the audio clip...
                 m_BGMAudioSource.clip = await WebRequestHelper.GetAudioClip(bgmPath);
@@ -137,7 +135,7 @@ namespace BA2LW.Core
             if (settings.sfx.enable)
             {
                 Debug.Log("Setup & Cache SFX...");
-                string sfxPath = Path.Combine(settingsManager.dataPath, settings.sfx.name);
+                string sfxPath = Path.Combine(settingsManager.currentWallpaperPath, settings.sfx.name);
 
                 // Cache the audio clip...
                 m_SFXAudioSource.clip = await WebRequestHelper.GetAudioClip(sfxPath);
@@ -147,7 +145,7 @@ namespace BA2LW.Core
 
             Debug.Log("Get & Cache Character Voices...");
 
-            string voicePath = Path.Combine(settingsManager.dataPath, "Voice");
+            string voicePath = Path.Combine(settingsManager.currentWallpaperPath, settings.talk.voiceData);
             DirectoryInfo directoryInfo = new DirectoryInfo(voicePath);
             FileInfo[] files = directoryInfo.GetFiles();
             for (int i = 0; i < files.Length; i++)
@@ -163,7 +161,7 @@ namespace BA2LW.Core
 
             // Instantiate character spine
             sprAnimation = await SpineHelper.InstantiateSpine(
-                settingsManager.dataPath,
+                settingsManager.currentWallpaperPath,
                 settings.student,
                 settings.imageList,
                 m_CharacterBase,
@@ -182,7 +180,7 @@ namespace BA2LW.Core
 
                 // Instantiate background spine
                 bgAnimation = await SpineHelper.InstantiateSpine(
-                    settingsManager.dataPath,
+                    settingsManager.currentWallpaperPath,
                     settings.bg.name,
                     settings.bg.imageList,
                     m_BackgroundBase,
@@ -194,7 +192,7 @@ namespace BA2LW.Core
                 // Play idle animation continuously
                 bgAnimation.AnimationState.AddAnimation(0, "Idle_01", true, 0);
 
-                if (settings.debug)
+                if (config.debug)
                 {
                     foreach (Spine.Animation a in bgAnimation.skeleton.Data.Animations)
                         m_DebugText.text += a.Name + "\n";
@@ -211,7 +209,7 @@ namespace BA2LW.Core
                 m_SFXAudioSource.Play();
 
             // Debug Window
-            if (settings.debug)
+            if (config.debug)
             {
                 Color grey50 = new Color(0.5f, 0.5f, 0.5f, 0.5f);
                 m_PatButton.GetComponent<Image>().color = grey50;
@@ -317,9 +315,7 @@ namespace BA2LW.Core
         {
             Vector2 mousePosition = Input.mousePosition;
             Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
-            Vector2 downPoint = m_RotationBase.transform.InverseTransformPoint(
-                worldMousePosition
-            );
+            Vector2 downPoint = m_RotationBase.transform.InverseTransformPoint(worldMousePosition);
 
             if (!isTalking)
             {

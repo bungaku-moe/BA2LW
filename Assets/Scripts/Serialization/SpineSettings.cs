@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace BA2LW.Core
+namespace BA2LW.Serialization
 {
     [Serializable]
-    public class Setting
+    public class SpineSettings
     {
-        public bool debug;
         public string student;
         public bool rotation;
         public float scale;
@@ -45,6 +44,7 @@ namespace BA2LW.Core
         [Serializable]
         public class Talk
         {
+            public string voiceData;
             public float volume;
             public bool onlyTalk;
             public int maxIndex;

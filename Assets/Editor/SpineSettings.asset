@@ -19,10 +19,10 @@ MonoBehaviour:
   defaultInstantiateLoop: 1
   showHierarchyIcons: 1
   setTextureImporterSettings: 1
-  textureSettingsReference: Assets/Plugins/Spine/Editor/spine-unity/Editor/ImporterPresets/PMATexturePreset.preset
-  blendModeMaterialMultiply: {fileID: 0}
-  blendModeMaterialScreen: {fileID: 0}
-  blendModeMaterialAdditive: {fileID: 0}
+  textureSettingsReference: Assets/Spine/Editor/spine-unity/Editor/ImporterPresets/PMATexturePreset.preset
+  blendModeMaterialMultiply: {fileID: 2100000, guid: 6e9b76a007a42554da2d6cb0363fee97, type: 2}
+  blendModeMaterialScreen: {fileID: 2100000, guid: 1414fd86cc3bf924bb10815ba9e25194, type: 2}
+  blendModeMaterialAdditive: {fileID: 2100000, guid: d95b2be2be7a77a4680e130cc46a009e, type: 2}
   atlasTxtImportWarning: 1
   textureImporterWarning: 1
   componentMaterialWarning: 1
