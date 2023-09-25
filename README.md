@@ -1,54 +1,88 @@
-# Blue Archive to Live Wallpaper (BA2LW)
+<h1 align="center">Blue Archive to Live Wallpaper<br/>(BA2LW)</h1>
+
+<div align="center">
+  <h1>🚧 Under Development 🚧</h1>
+  <p><a href="./README.md">EN</a> | ID</p>
+</div>
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Wallpaper Data Structures](#wallpaper-data-structures)
+- [Configuration Contents](#configuration-contents)
+  - [config.json](#configjson)
+  - [settings.json](#settingsjson)
 
 ## Overview
 
 This project is intended to restore [Blue Archive](https://bluearchive.nexon.com/ "Visit Blue Archive official website") Memorial Lobby and used it as interactive Live Wallpaper.
 
-This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall/releases) by [Tualin14](https://github.com/Tualin14) that no longer maintained. You can checkout his(?) work at [Steam Wallpaper Engine Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2875378435 "Visit Tualin14 Workshop").
+This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall) by [Tualin14](https://github.com/Tualin14) that no longer maintained. You can checkout his(?) work at [Steam Wallpaper Engine Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2875378435 "Visit Tualin14 Workshop").
 
-## Game Data Structure
+## Wallpaper Data Structures
 
-- `Data/` All required data
-  - `Voice/` Voice assets
-  - `settings.json` Settings file
-  - `Theme.ogg` Background music
+- `BA2LW.exe` Main executable.
+- `Data/` Root directory contains all charater L2D assets & settings.
+  - `config.json` Global configuration file, such as set the current active wallpaper, FPS, etc.
+  - `{Character Name}` Root directory for each character assets & settings.
+    - `Voice/` Character `Memorial Lobby` voice assets. _(Customizable)_
+    - `*.atlas` Character Spine Atlas asset.
+    - `*.png` Character Spine Texture asset.
+    - `*.skel` Character Spine Skeleton asset.
+    - `settings.json` The settings for this L2D, such as `patRange`, `bones`.
+    - `Theme.ogg` The wallpaper background music. _(Customizable)_
+  - `{Other Character}`
+  - ...
 
-## settings.json Contents
+## Configuration Contents
 
-- `student` student file name
-- `debug` Debug, check the trigger position
-- `rotation` Straighten the characters, it can be used by students like Xinnai
-- `scale` zoom
-- `lookRange` Annotation range, in the shape of a square with sides parallel to the eyes
-- `pat`
-  - `range` Touch the area of the head, shaped as a line parallel to the eyes
-  - `somethingWrong` Set this to true if the touch head does not follow the mouse movement
-- `imageList` List of pictures, write as many as there are
-- `bgm`
-  - `enable` If you want to mute bgm, you can turn it off directly to save a little memory
-  - `volume` Volume 0.0~1.0
-- `se` Sound effects, a few wallpapers have ambient sounds, such as Kayoko
-  - `enable` enable sound
-  - `name` sound file name
-  - `volume` Volume 0.0~1.0
-- `talk`
-  - `volume` Volume 0.0~1.0
-  - `onlyTalk` Some student sound events are not specifically specified, and they are all turned on for Talk events. If there is no sound, change it to true.
-  - `maxIndex` Number of voice animations
+### config.json
+
+- [string] `wallpaper` The current active wallpaper. Based on the character directory name `{Character Name}`.
+- [int] `fps` The FPS limit. The value must be absolute number.
+- [bool] `debug` Show additional information, such as interactable area, bones name, etc. _(Developer Only)_
+
+### settings.json
+
+- [string] `student` Student file name. Based on Spine assets base name.
+  (E.g. `Shiroko_home.atlas`, `Shiroko_home.png`, `Shiroko_home2.png`. The student name would be `Shiroko_home`.)
+- [bool] `rotation` Straighten the character. Can be used by student like Xinnai. _(Need more info)_
+- [float] `scale` The scale of character & background Spine.
+- [float] `lookRange` The max range for the eyes to move.
+- [string[]] `imageList` The list of character Spine images.
 - `bone`
-  - `eyeL` Root bone name of left eye
-  - `eyeR` Right eye root bone name
-  - `halo` Aura Root Bone Name
-  - `neck` neck bone name
-- `bg` If the background is also an animation setting, such as Hoshino, Yuzu
-  - `isSpine` Whether the background is also animated
-  - `name` background image name
+  - [string] `eyeL` Character left eye root bone name.
+  - [string] `eyeR` Character right eye root bone name.
+  - [string] `halo` Character halo root bone name.
+  - [string] `neck` Character neck root bone name.
+- `pat`
+  - [float] `range` Pat area of the head. Rectangle shaped.
+  - [bool] `somethingWrong` Set this to `true` if the head does not follow the mouse movement when you pat. _(Need more info)_
+- `bgm`
+  - [bool] `enable` Enable/Disable background music.
+  - [float] `volume` Background music volume. Range: 0 ~ 1.
+  - [string] `clip` The file name of the background music.
+- `sfx` The L2D sound effect. A few L2D have ambient sounds, such as Kayoko.
+  - [bool] `enable` Enable/Disable sound effect.
+  - [string] `name` The sound effect file name.
+  - [float] `volume` Sound effect volume. Range: 0 ~ 1.
+- `talk`
+  - [string] `voiceData` The directory name of the character voice assets.
+  - [float] `volume` Character voice volume. Range: 0 ~ 1.
+  - [bool] `onlyTalk` Some student sound events are not specifically set and they are all turned on for Talk events. If there is no sound, set it to `true`.
+  - [int] `maxIndex` The number of voice talk animations. Counted only the first number from the last.  
+    (E.g. `Hihumi_MemorialLobby_1_1.ogg`, `Hihumi_MemorialLobby_1_2.ogg`, `Hihumi_MemorialLobby_2_1.ogg`. The index are `2`.)
+- `bg` If the background is also animated, such as Hoshino & Yuzu.
+  - [bool] `isSpine` Is the background animated?
+  - [string] `name` Background image file name. The naming rule are same as `student`.
   - `state`
-    - `more` Whether there are other states besides the default state. Such as star field background and animation of whale movement
-    - `name` other state names
-  - `imageList` List of background images, write as many as there are
+    - [bool] `more` Whether there are other states besides the default state. Such as star field background and animation of a whale. _(Need more info)_
+    - [string] `name` other state names. _(Need more info)_
+  - [string[]] `imageList` The list of background Spine images.
 
 ---
+
+> <h1 align="center">🚧 Need more information 🚧</h1>
 
 1. Open the program with debug to see the display on the left
 2. Open the program and the interaction range is correct.
@@ -65,7 +99,6 @@ This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall/releases
 <pre>
 {
     "student": "Koharu_home",
-    "debug": false,
     "rotation":true,
     "scale":1,
     "imageList": [
@@ -96,7 +129,6 @@ This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall/releases
 <pre>
 {
     "student": "Kayoko_home",
-    "debug": false,
     "rotation": false,
     "scale": 1,
     "imageList": [
@@ -132,7 +164,6 @@ This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall/releases
 <pre>
 {
     "student": "Hoshino_home",
-    "debug": true,
     "rotation": false,
     "scale": 1,
     "imageList": [
@@ -174,7 +205,6 @@ This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall/releases
 <pre>
 {
     "student": "Hihumi_home",
-    "debug": true,
     "rotation": false,
     "scale": 1,
     "lookRange": 0.5,
@@ -203,6 +233,8 @@ This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall/releases
     }
 }</pre>
 </details>
+
+---
 
 ## Credits
 
