@@ -8,4 +8,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/BA2LW.unity
     guid: edd601a99dfdd6744890223f70cfbf95
-  m_configObjects: {}
+  m_configObjects:
+    com.unity.input.settings: {fileID: 11400000, guid: 5eed780f7d05a2a43ae1e6cda0290f71, type: 2}
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 93c41108333b019408ab9076049b0eeb, type: 3}
+  m_UseUCBPForAssetBundles: 0

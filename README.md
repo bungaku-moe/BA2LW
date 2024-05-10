@@ -15,9 +15,9 @@
 
 ## Overview
 
-This project is intended to restore [Blue Archive](https://bluearchive.nexon.com/ "Visit Blue Archive official website") Memorial Lobby and used it as interactive Live Wallpaper.
+BA2LW is a project intended to make [Blue Archive](https://bluearchive.nexon.com/ "Visit Blue Archive official website") Memorial Lobby used as Interactive Live Wallpaper on your desktop.
 
-This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall) by [Tualin14](https://github.com/Tualin14) that no longer maintained. You can checkout his(?) work at [Steam Wallpaper Engine Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2875378435 "Visit Tualin14 Workshop").
+This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall) by [Tualin14](https://github.com/Tualin14) that no longer maintained. You can checkout his work at [Steam Wallpaper Engine Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2875378435 "Visit Tualin14 Workshop").
 
 ## Wallpaper Data Structures
 
@@ -238,18 +238,22 @@ This project is a fork of [ba2wall](https://github.com/Tualin14/ba2wall) by [Tua
 
 ## Credits
 
-- [spine-unity](http://en.esotericsoftware.com/spine-unity-download "Visit spine-unity official website")
+- [Tualin14](https://github.com/Tualin14 "Visit Tualin14 GitHub profile"), the original creator.
+- [spine-unity](http://en.esotericsoftware.com/spine-unity-download "Visit spine-unity official website"), the backbone of Blue Archive Live 2D engine.
+  > You can use [my forked spine-unity](https://github.com/kiraio-moe/spine-unity) that support installing via Package Manager.
+- [UniTask](https://github.com/Cysharp/UniTask "Visit UniTask GitHub repo"), the Asynchronous library for faster runtime speed.
+- [SerializedDictionary](https://github.com/ayellowpaper/SerializedDictionary "Visit SerializedDictionary GitHub repo"), a handy tool to inspecting Dictionary on Unity Inspector that's not officially supported.
+
 
 ## License
 
-This project is licensed under GNU GPL 3.0.
+The project is licensed under GNU GPL 3.0, not Blue Archive related assets.
 
 For more information about the GNU General Public License version 3.0 (GNU GPL 3.0), please refer to the official GNU website: <https://www.gnu.org/licenses/gpl-3.0.html>
 
 ## Disclaimer
 
 This project is not affiliated with Nexon, NEXON Games Co., Ltd. nor any their affiliator.
-
-This project is intended only as a tool for fun. Any game assets and resources related to Blue Archive used in this project is property and copyright of those respective authors.
+It's intended as a tool for fun for Blue Archive Sensei's. Any Blue Archive assets and resources used in this project is property and copyright of those respective authors.
 
 [Blue Archive](https://bluearchive.nexon.com/ "Visit Blue Archive official website") is property dan copyright of Nexon, NEXON Games Co., Ltd.

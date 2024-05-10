@@ -10,7 +10,7 @@ using UnityEngine;
 namespace BA2LW.Utils
 {
     /// <summary>
-    /// Spine related functionality.
+    /// Spine related helper methods.
     /// </summary>
     public static class SpineHelper
     {
@@ -45,7 +45,7 @@ namespace BA2LW.Utils
             skeletonDataField.SetValue(skeletonDataAsset, skeletonData);
             stateDataField.SetValue(skeletonDataAsset, stateData);
 
-            // Set dummy value to skeletonJSON to make sure there's no
+            // Set a dummy value to skeletonJSON variable to make sure there's no
             // error returned if we call some method in SkeletonDataAsset
             skeletonDataAsset.skeletonJSON = new TextAsset("BA2LW");
 
@@ -56,15 +56,15 @@ namespace BA2LW.Utils
         /// <summary>
         /// Add Spine Animation into existing GameObject.
         /// </summary>
-        /// <param name="rootPath">The root path of the Spine.</param>
-        /// <param name="spineName">Name of the Spine to search for.</param>
-        /// <param name="spineImages">List of paths to the Spine textures.</param>
-        /// <param name="targetGameObject">The target GameObject.</param>
-        /// <param name="spineShader">The shader used for Spine Animation.</param>
-        /// <param name="spineScale">The scale of the Spine.</param>
-        /// <param name="spineScaleMultiplier">Spine scale multiplier.</param>
-        /// <param name="loop">Loop Skeleton Animation?</param>
-        /// <param name="defaultAnimation">Default animation name to start.</param>
+        /// <param name="rootPath">The root path of the Spine Skeleton assets.</param>
+        /// <param name="spineName">Base file name of the Spine Skeleton asset (without extension).</param>
+        /// <param name="spineImages">List of full paths to the Spine Skeleton texture assets.</param>
+        /// <param name="targetGameObject">The target GameObject to spawn Spine Skeleton Animation instance.</param>
+        /// <param name="spineShader">The shader used for the Spine Skeleton Animation.</param>
+        /// <param name="spineScale">The scale of the Spine Skeleton Animation.</param>
+        /// <param name="spineScaleMultiplier">Spine Skeleton Animation scale multiplier.</param>
+        /// <param name="loop">Loop Spine Skeleton Animation?</param>
+        /// <param name="defaultAnimation">Default Spine Skeleton animation name to start.</param>
         /// <returns>The Skeleton Animation component it self.</returns>
         public static async Task<SkeletonAnimation> InstantiateSpine(
             string rootPath,
@@ -93,7 +93,7 @@ namespace BA2LW.Utils
             {
                 string imageName = spineImages[i];
                 Texture2D imageTexture = new Texture2D(1, 1);
-                imageData = await WebRequestHelper.GetBytesData(
+                imageData = await WebRequestHelper.GetBinaryData(
                     Path.Combine(rootPath, $"{imageName}.png")
                 );
 
@@ -135,18 +135,35 @@ namespace BA2LW.Utils
         }
 
         /// <summary>
-        /// Convert Bone world space coordinates into screen space coordinates.
+        /// Convert Bone world space coordinates into screen space coordinates (Screen Space - Overlay).
         /// </summary>
         /// <param name="skeletonAnimation">The target Skeleton Animation.</param>
         /// <param name="bone">Bone name.</param>
         /// <returns>Bone screen position.</returns>
-        public static Vector3 BoneScreenPosition(SkeletonAnimation skeletonAnimation, string bone)
+        public static Vector2 BoneScreenPosition(SkeletonAnimation skeletonAnimation, string bone)
         {
             return Camera.main.WorldToScreenPoint(
                 skeletonAnimation.skeleton
                     .FindBone(bone)
                     .GetWorldPosition(skeletonAnimation.transform)
             );
+        }
+
+        /// <summary>
+        /// Convert Bone world space coordinates into screen space coordinates (Screen Space - Camera).
+        /// </summary>
+        /// <param name="skeletonAnimation">The target Skeleton Animation.</param>
+        /// <param name="bone">Bone name.</param>
+        /// <returns>Bone screen position.</returns>
+        public static Vector2 BoneScreenPosition(SkeletonAnimation skeletonAnimation, string bone, RectTransform rectTransform)
+        {
+            Vector2 localPoint, screenPoint = Camera.main.WorldToScreenPoint(
+                skeletonAnimation.skeleton
+                    .FindBone(bone)
+                    .GetWorldPosition(skeletonAnimation.transform)
+            );
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, screenPoint, Camera.main, out localPoint);
+            return localPoint;
         }
 
         /// <summary>

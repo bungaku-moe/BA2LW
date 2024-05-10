@@ -17,7 +17,7 @@ namespace BA2LW.Utils
             {
                 if (instance == null)
                 {
-                    instance = FindObjectOfType<T>();
+                    instance = FindFirstObjectByType<T>();
 
                     if (instance == null)
                     {
@@ -37,7 +37,7 @@ namespace BA2LW.Utils
         {
             if (instance == null)
             {
-                instance = FindObjectOfType<T>();
+                instance = FindFirstObjectByType<T>();
 
                 if (instance == null)
                     instance = this as T;

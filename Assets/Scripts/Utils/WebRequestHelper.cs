@@ -1,98 +1,121 @@
 using System;
 using System.IO;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using Unity.Logging;
 
 namespace BA2LW.Utils
 {
+    /// <summary>
+    /// Some handy utility to perform Unity Web Request.
+    /// </summary>
     public static class WebRequestHelper
     {
         /// <summary>
-        /// Request file and retrieve the data as text.
+        /// Request a file and retrieve the data as text.
         /// </summary>
         /// <param name="url"></param>
         /// <returns>Text data.</returns>
-        public static async Task<string> GetTextData(string url)
+        public static async UniTask<string> GetTextData(string url)
         {
-            UnityWebRequest uwr = UnityWebRequest.Get(url);
-            TaskCompletionSource<string> tcs = new TaskCompletionSource<string>();
-
-            uwr.SendWebRequest().completed += operation =>
+            try
             {
-                if (uwr.result == UnityWebRequest.Result.Success)
-                    tcs.SetResult(uwr.downloadHandler.text);
-                else
-                    tcs.SetException(new Exception(uwr.error));
-                uwr.Dispose(); // Dispose of the UnityWebRequest to free up resources.
-            };
+                using UnityWebRequest uwr = UnityWebRequest.Get(url);
+                UniTaskCompletionSource<string> tcs = new UniTaskCompletionSource<string>();
 
-            return await tcs.Task;
+                uwr.SendWebRequest().completed += _ =>
+                {
+                    if (uwr.result == UnityWebRequest.Result.Success)
+                        tcs.TrySetResult(uwr.downloadHandler.text);
+                    else
+                        tcs.TrySetException(new Exception(uwr.error));
+                };
+
+                return await tcs.Task;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex);
+                return null;
+            }
         }
 
         /// <summary>
-        /// Request file and retrieve the data as bytes.
+        /// Request a file and retrieve the data as bytes.
         /// </summary>
         /// <param name="url"></param>
         /// <returns>Array of byte.</returns>
-        public static async Task<byte[]> GetBytesData(string url)
+        public static async UniTask<byte[]> GetBinaryData(string url)
         {
-            UnityWebRequest uwr = UnityWebRequest.Get(url);
-            TaskCompletionSource<byte[]> tcs = new TaskCompletionSource<byte[]>();
-
-            uwr.SendWebRequest().completed += operation =>
+            try
             {
-                if (uwr.result == UnityWebRequest.Result.Success)
-                    tcs.SetResult(uwr.downloadHandler.data);
-                else
-                    tcs.SetException(new Exception(uwr.error));
-                uwr.Dispose(); // Dispose of the UnityWebRequest to free up resources.
-            };
+                using UnityWebRequest uwr = UnityWebRequest.Get(url);
+                UniTaskCompletionSource<byte[]> tcs = new UniTaskCompletionSource<byte[]>();
 
-            return await tcs.Task;
+                uwr.SendWebRequest().completed += _ =>
+                {
+                    if (uwr.result == UnityWebRequest.Result.Success)
+                        tcs.TrySetResult(uwr.downloadHandler.data);
+                    else
+                        tcs.TrySetException(new Exception(uwr.error));
+                };
+
+                return await tcs.Task;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex);
+                return null;
+            }
         }
 
         /// <summary>
-        /// Get audio clip and automatically assign it's AudioType.
+        /// Request an audio clip.
         /// </summary>
         /// <param name="url"></param>
         /// <returns></returns>
-        public static async Task<AudioClip> GetAudioClip(string url)
+        public static async UniTask<AudioClip> GetAudioClip(string url)
         {
-            UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(url, GetAudioType(url));
-            TaskCompletionSource<AudioClip> tcs = new TaskCompletionSource<AudioClip>();
-
-            uwr.SendWebRequest().completed += operation =>
+            try
             {
-                if (uwr.result == UnityWebRequest.Result.Success)
-                    tcs.SetResult(DownloadHandlerAudioClip.GetContent(uwr));
-                else
-                    tcs.SetException(new Exception(uwr.error));
-                uwr.Dispose(); // Dispose of the UnityWebRequest to free up resources.
-            };
+                using UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(
+                    url,
+                    GetAudioType(url)
+                );
+                UniTaskCompletionSource<AudioClip> tcs = new UniTaskCompletionSource<AudioClip>();
 
-            return await tcs.Task;
+                uwr.SendWebRequest().completed += _ =>
+                {
+                    if (uwr.result == UnityWebRequest.Result.Success)
+                        tcs.TrySetResult(DownloadHandlerAudioClip.GetContent(uwr));
+                    else
+                        tcs.TrySetException(new Exception(uwr.error));
+                };
+
+                return await tcs.Task;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex);
+                return null;
+            }
         }
 
         /// <summary>
-        /// Automatically assign AudioType for *.mp2, *.mp3, *.ogg, *.wav files.
+        /// Automatically assign AudioType for .mp3, .ogg, and .wav files.
         /// </summary>
         /// <param name="url"></param>
         /// <returns>AudioType</returns>
-        public static AudioType GetAudioType(string url)
+        static AudioType GetAudioType(string url)
         {
-            switch (Path.GetExtension(url))
+            return Path.GetExtension(url) switch
             {
-                case ".mp2":
-                case ".mp3":
-                    return AudioType.MPEG;
-                case ".ogg":
-                    return AudioType.OGGVORBIS;
-                case ".wav":
-                    return AudioType.WAV;
-                default:
-                    return AudioType.UNKNOWN;
-            }
+                ".mp3" => AudioType.MPEG,
+                ".ogg" => AudioType.OGGVORBIS,
+                ".wav" => AudioType.WAV,
+                _ => AudioType.UNKNOWN,
+            };
         }
     }
 }

@@ -11,7 +11,7 @@ namespace BA2LW.Components
 
         void Awake()
         {
-            control = FindObjectOfType<MainControl>();
+            control = FindFirstObjectByType<MainControl>();
         }
 
         public void OnPointerClick(PointerEventData eventData)
