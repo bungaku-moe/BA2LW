@@ -107,7 +107,7 @@ namespace BA2LW.Utils
         /// </summary>
         /// <param name="url"></param>
         /// <returns>AudioType</returns>
-        static AudioType GetAudioType(string url)
+        private static AudioType GetAudioType(string url)
         {
             return Path.GetExtension(url) switch
             {

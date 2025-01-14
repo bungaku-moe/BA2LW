@@ -9,14 +9,14 @@ namespace BA2LW.Components
     {
         MainControl control;
 
-        void Awake()
+        private void Awake()
         {
             control = FindFirstObjectByType<MainControl>();
         }
 
         public void OnPointerClick(PointerEventData eventData)
         {
-            control.SetTalking();
+            control.Talking();
         }
     }
 }

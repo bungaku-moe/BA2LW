@@ -7,9 +7,10 @@ namespace BA2LW.Utils
     /// Generic singleton base class for global, single-instance MonoBehaviours.
     /// </summary>
     /// <typeparam name="T">The class type to define</typeparam>
-    public abstract class Singleton<T> : MonoBehaviour where T : Singleton<T>
+    public abstract class Singleton<T> : MonoBehaviour
+        where T : Singleton<T>
     {
-        static T instance;
+        private static T instance;
 
         public static T Instance
         {
@@ -48,7 +49,7 @@ namespace BA2LW.Utils
                 Destroy(instance.gameObject);
         }
 
-        void Awake()
+        private void Awake()
         {
             OnInitialize();
         }

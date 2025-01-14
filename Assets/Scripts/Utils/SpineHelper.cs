@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Spine;
 using Spine.Unity;
+using Unity.Logging;
 using UnityEngine;
 
 namespace BA2LW.Utils
@@ -24,33 +25,41 @@ namespace BA2LW.Utils
             AnimationStateData stateData
         )
         {
-            // Create a new instance of SkeletonDataAsset
-            SkeletonDataAsset skeletonDataAsset =
-                ScriptableObject.CreateInstance<SkeletonDataAsset>();
+            try
+            {
+                // Create a new instance of SkeletonDataAsset
+                SkeletonDataAsset skeletonDataAsset =
+                    ScriptableObject.CreateInstance<SkeletonDataAsset>();
 
-            // Get the type of SkeletonDataAsset
-            Type skeletonDataAssetType = skeletonDataAsset.GetType();
+                // Get the type of SkeletonDataAsset
+                Type skeletonDataAssetType = skeletonDataAsset.GetType();
 
-            // Get the skeletonData and stateData fields
-            FieldInfo skeletonDataField = skeletonDataAssetType.GetField(
-                "skeletonData",
-                BindingFlags.NonPublic | BindingFlags.Instance
-            );
-            FieldInfo stateDataField = skeletonDataAssetType.GetField(
-                "stateData",
-                BindingFlags.NonPublic | BindingFlags.Instance
-            );
+                // Get the skeletonData and stateData fields
+                FieldInfo skeletonDataField = skeletonDataAssetType.GetField(
+                    "skeletonData",
+                    BindingFlags.NonPublic | BindingFlags.Instance
+                );
+                FieldInfo stateDataField = skeletonDataAssetType.GetField(
+                    "stateData",
+                    BindingFlags.NonPublic | BindingFlags.Instance
+                );
 
-            // Set the values of skeletonData and stateData
-            skeletonDataField.SetValue(skeletonDataAsset, skeletonData);
-            stateDataField.SetValue(skeletonDataAsset, stateData);
+                // Set the values of skeletonData and stateData
+                skeletonDataField.SetValue(skeletonDataAsset, skeletonData);
+                stateDataField.SetValue(skeletonDataAsset, stateData);
 
-            // Set a dummy value to skeletonJSON variable to make sure there's no
-            // error returned if we call some method in SkeletonDataAsset
-            skeletonDataAsset.skeletonJSON = new TextAsset("BA2LW");
+                // Set a dummy value to skeletonJSON variable to make sure there's no
+                // error returned if we call some method in SkeletonDataAsset
+                skeletonDataAsset.skeletonJSON = new TextAsset("BA2LW");
 
-            // Return the SkeletonDataAsset
-            return skeletonDataAsset;
+                // Return the SkeletonDataAsset
+                return skeletonDataAsset;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex);
+                return null;
+            }
         }
 
         /// <summary>
@@ -63,8 +72,6 @@ namespace BA2LW.Utils
         /// <param name="spineShader">The shader used for the Spine Skeleton Animation.</param>
         /// <param name="spineScale">The scale of the Spine Skeleton Animation.</param>
         /// <param name="spineScaleMultiplier">Spine Skeleton Animation scale multiplier.</param>
-        /// <param name="loop">Loop Spine Skeleton Animation?</param>
-        /// <param name="defaultAnimation">Default Spine Skeleton animation name to start.</param>
         /// <returns>The Skeleton Animation component it self.</returns>
         public static async Task<SkeletonAnimation> InstantiateSpine(
             string rootPath,
@@ -73,65 +80,72 @@ namespace BA2LW.Utils
             GameObject targetGameObject,
             Shader spineShader,
             float spineScale = 1f,
-            float spineScaleMultiplier = 0.0115f,
-            bool loop = false,
-            string defaultAnimation = "Start_Idle_01"
+            float spineScaleMultiplier = 0.0115f
         )
         {
-            string spinePath = Path.Combine(rootPath, spineName);
-            string atlasPath = $"{spinePath}.atlas";
-            string skelPath = $"{spinePath}.skel";
-
-            // Get atlas
-            TextAsset atlasTextAsset = new TextAsset(await WebRequestHelper.GetTextData(atlasPath));
-
-            // Get image textures
-            Texture2D[] imageTextures = new Texture2D[spineImages.Count];
-            byte[] imageData;
-
-            for (int i = 0; i < spineImages.Count; i++)
+            try
             {
-                string imageName = spineImages[i];
-                Texture2D imageTexture = new Texture2D(1, 1);
-                imageData = await WebRequestHelper.GetBinaryData(
-                    Path.Combine(rootPath, $"{imageName}.png")
+                string spinePath = Path.Combine(rootPath, spineName);
+                string atlasPath = $"{spinePath}.atlas";
+                string skelPath = $"{spinePath}.skel";
+
+                // Get atlas
+                TextAsset atlasTextAsset = new TextAsset(
+                    await WebRequestHelper.GetTextData(atlasPath)
                 );
 
-                imageTexture.LoadImage(imageData);
-                imageTexture.name = imageName;
-                imageTextures[i] = imageTexture;
+                // Get image textures
+                Texture2D[] imageTextures = new Texture2D[spineImages.Count];
+                byte[] imageData;
+
+                for (int i = 0; i < spineImages.Count; i++)
+                {
+                    string imageName = spineImages[i];
+                    Texture2D imageTexture = new Texture2D(1, 1);
+                    imageData = await WebRequestHelper.GetBinaryData(
+                        Path.Combine(rootPath, $"{imageName}.png")
+                    );
+
+                    imageTexture.LoadImage(imageData);
+                    imageTexture.name = imageName;
+                    imageTextures[i] = imageTexture;
+                }
+
+                SpineAtlasAsset atlasAsset = SpineAtlasAsset.CreateRuntimeInstance(
+                    atlasTextAsset,
+                    imageTextures,
+                    spineShader,
+                    true
+                );
+
+                AtlasAttachmentLoader attachmentLoader = new AtlasAttachmentLoader(
+                    atlasAsset.GetAtlas()
+                );
+                SkeletonBinary skeletonBinary = new SkeletonBinary(attachmentLoader);
+                skeletonBinary.Scale *= spineScaleMultiplier;
+                skeletonBinary.Scale *= spineScale;
+
+                SkeletonData skeletonData = skeletonBinary.ReadSkeletonData(skelPath);
+                AnimationStateData animationStateData = new AnimationStateData(skeletonData);
+                SkeletonDataAsset skeletonDataAsset = CreateSkeletonDataAsset(
+                    skeletonData,
+                    animationStateData
+                );
+
+                SkeletonAnimation spineAnimation = SkeletonAnimation.AddToGameObject(
+                    targetGameObject,
+                    skeletonDataAsset
+                );
+                spineAnimation.Initialize(false);
+                spineAnimation.Skeleton.SetSlotsToSetupPose();
+
+                return spineAnimation;
             }
-
-            SpineAtlasAsset atlasAsset = SpineAtlasAsset.CreateRuntimeInstance(
-                atlasTextAsset,
-                imageTextures,
-                spineShader,
-                true
-            );
-
-            AtlasAttachmentLoader attachmentLoader = new AtlasAttachmentLoader(
-                atlasAsset.GetAtlas()
-            );
-            SkeletonBinary skeletonBinary = new SkeletonBinary(attachmentLoader);
-            skeletonBinary.Scale *= spineScaleMultiplier;
-            skeletonBinary.Scale *= spineScale;
-
-            SkeletonData skeletonData = skeletonBinary.ReadSkeletonData(skelPath);
-            AnimationStateData animationStateData = new AnimationStateData(skeletonData);
-            SkeletonDataAsset skeletonDataAsset = CreateSkeletonDataAsset(
-                skeletonData,
-                animationStateData
-            );
-
-            SkeletonAnimation spineAnimation = SkeletonAnimation.AddToGameObject(
-                targetGameObject,
-                skeletonDataAsset
-            );
-            spineAnimation.Initialize(false);
-            spineAnimation.Skeleton.SetSlotsToSetupPose();
-            spineAnimation.AnimationState.SetAnimation(0, defaultAnimation, loop);
-
-            return spineAnimation;
+            catch (Exception ex)
+            {
+                Log.Error(ex);
+                return null;
+            }
         }
 
         /// <summary>
@@ -142,28 +156,122 @@ namespace BA2LW.Utils
         /// <returns>Bone screen position.</returns>
         public static Vector2 BoneScreenPosition(SkeletonAnimation skeletonAnimation, string bone)
         {
+            // try
+            // {
             return Camera.main.WorldToScreenPoint(
-                skeletonAnimation.skeleton
-                    .FindBone(bone)
+                skeletonAnimation
+                    .skeleton.FindBone(bone)
                     .GetWorldPosition(skeletonAnimation.transform)
             );
+            // }
+            // catch
+            // {
+            //     return Vector2.negativeInfinity;
+            // }
         }
 
         /// <summary>
         /// Convert Bone world space coordinates into screen space coordinates (Screen Space - Camera).
         /// </summary>
         /// <param name="skeletonAnimation">The target Skeleton Animation.</param>
-        /// <param name="bone">Bone name.</param>
+        /// <param name="bone">The Bone.</param>
         /// <returns>Bone screen position.</returns>
-        public static Vector2 BoneScreenPosition(SkeletonAnimation skeletonAnimation, string bone, RectTransform rectTransform)
+        public static Vector2 BoneScreenPosition(
+            SkeletonAnimation skeletonAnimation,
+            Bone bone,
+            RectTransform rectTransform
+        )
         {
-            Vector2 localPoint, screenPoint = Camera.main.WorldToScreenPoint(
-                skeletonAnimation.skeleton
-                    .FindBone(bone)
+            Vector2 screenPoint = Camera.main.WorldToScreenPoint(
+                bone.GetWorldPosition(skeletonAnimation.transform)
+            );
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                rectTransform,
+                screenPoint,
+                Camera.main,
+                out Vector2 localPoint
+            );
+            return localPoint;
+        }
+
+        /// <summary>
+        /// Convert Bone world space coordinates into screen space coordinates (Screen Space - Camera).
+        /// </summary>
+        /// <param name="skeletonAnimation">The target Skeleton Animation.</param>
+        /// <param name="bone">Bone name to search for.</param>
+        /// <returns>Bone screen position.</returns>
+        public static Vector2 BoneScreenPosition(
+            SkeletonAnimation skeletonAnimation,
+            string bone,
+            RectTransform rectTransform
+        )
+        {
+            Vector2 screenPoint = Camera.main.WorldToScreenPoint(
+                skeletonAnimation
+                    .skeleton.FindBone(bone)
                     .GetWorldPosition(skeletonAnimation.transform)
             );
-            RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, screenPoint, Camera.main, out localPoint);
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                rectTransform,
+                screenPoint,
+                Camera.main,
+                out Vector2 localPoint
+            );
             return localPoint;
+        }
+
+        /// <summary>
+        /// Loop through the provided bone names to get the available bone.
+        /// Convert Bone world space coordinates into screen space coordinates (Screen Space - Overlay).
+        /// </summary>
+        /// <param name="skeletonAnimation">The target Skeleton Animation.</param>
+        /// <param name="bone">Bone names list.</param>
+        /// <returns>Bone screen position.</returns>
+        public static Vector2 TryGetBoneScreenPosition(
+            SkeletonAnimation skeletonAnimation,
+            string[] bones
+        )
+        {
+            foreach (string bone in bones)
+            {
+                Vector2 bonePosition = BoneScreenPosition(skeletonAnimation, bone);
+                if (bonePosition != Vector2.negativeInfinity)
+                    return bonePosition;
+            }
+
+            return Vector2.negativeInfinity;
+        }
+
+        /// <summary>
+        /// Loop through the provided bone names to get the available bone.
+        /// Convert Bone world space coordinates into screen space coordinates (Screen Space - Camera).
+        /// </summary>
+        /// <param name="skeletonAnimation">The target Skeleton Animation.</param>
+        /// <param name="bones">Bones name list.</param>
+        /// <returns>Bone screen position.</returns>
+        public static Vector2 TryGetBoneScreenPosition(
+            SkeletonAnimation skeletonAnimation,
+            string[] bones,
+            RectTransform rectTransform
+        )
+        {
+            foreach (string boneName in bones)
+            {
+                Bone bone = skeletonAnimation.skeleton.FindBone(boneName);
+                if (bone != null)
+                {
+                    Vector2 bonePosition = BoneScreenPosition(
+                        skeletonAnimation,
+                        bone,
+                        rectTransform
+                    );
+                    Log.Info($"Bone: {bone}, Position: {bonePosition}");
+                    return bonePosition;
+                }
+            }
+
+            Log.Warning("No bones found!");
+            return Vector2.zero;
         }
 
         /// <summary>

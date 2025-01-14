@@ -9,19 +9,19 @@ namespace BA2LW.Components
     {
         MainControl control;
 
-        void Awake()
+        private void Awake()
         {
             control = FindFirstObjectByType<MainControl>();
         }
 
         public void OnPointerDown(PointerEventData eventData)
         {
-            control.SetLooking(true);
+            control.Looking(true);
         }
 
         public void OnPointerUp(PointerEventData eventData)
         {
-            control.SetLooking(false);
+            control.Looking(false);
         }
     }
 }

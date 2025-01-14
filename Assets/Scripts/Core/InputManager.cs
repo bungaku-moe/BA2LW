@@ -9,24 +9,24 @@ namespace BA2LW.Core
     {
         public Vector2 PointerPosition { get; private set; }
 
-        InputSettings inputSettings;
+        private InputSettings inputSettings;
 
-        void OnEnable()
+        private void OnEnable()
         {
             inputSettings.Enable();
         }
 
-        void OnDisable()
+        private void OnDisable()
         {
             inputSettings.Disable();
         }
 
-        void Awake()
+        private void Awake()
         {
             inputSettings = new InputSettings();
         }
 
-        void Update()
+        private void Update()
         {
             PointerPosition = inputSettings.UI.PointerPosition.ReadValue<Vector2>();
         }

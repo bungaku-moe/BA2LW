@@ -3,9 +3,9 @@ using System.IO;
 using BA2LW.Serialization;
 using BA2LW.Utils;
 using Cysharp.Threading.Tasks;
-using UnityEngine;
 using Unity.Logging;
 using Unity.Logging.Sinks;
+using UnityEngine;
 using Logger = Unity.Logging.Logger;
 
 namespace BA2LW.Core
@@ -16,19 +16,19 @@ namespace BA2LW.Core
         [Header("Data & Settings")]
         [SerializeField]
         [Tooltip("Wallpaper data directory name at the application root directory")]
-        string m_DataDirectory = "Data";
+        private string m_DataDirectory = "Data";
 
         [SerializeField]
         [Tooltip("Wallpaper global configuration file name")]
-        string m_ConfigFile = "config.json";
+        private string m_ConfigFile = "config.json";
 
         [SerializeField]
         [Tooltip("Spine settings file name")]
-        string m_SettingsFile = "settings.json";
+        private string m_SettingsFile = "settings.json";
 
         [SerializeField]
         [Tooltip("Log file name")]
-        string m_LogFile = "console.log";
+        private string m_LogFile = "console.log";
 
         /// <summary>
         /// Root path of the Spine data.
@@ -66,12 +66,25 @@ namespace BA2LW.Core
         /// <value></value>
         public SpineSettings Settings { get; private set; }
 
-        async UniTaskVoid Awake()
-        {
-            SetLoggerConfig();
+        private MainControl mainControl;
 
+        private void Awake()
+        {
+            mainControl = FindFirstObjectByType<MainControl>();
+
+            SetLoggerConfig();
             DataPath = Path.Combine(Utility.GetApplicationPath(), m_DataDirectory);
             ConfigPath = Path.Combine(DataPath, m_ConfigFile);
+            Initialize();
+        }
+
+        private void Start()
+        {
+            mainControl.Initialize();
+        }
+
+        public async void Initialize()
+        {
             GlobalConfig = await GetGlobalConfig(ConfigPath);
 
             CurrentWallpaperPath = Path.Combine(DataPath, GlobalConfig.wallpaper);
@@ -85,7 +98,7 @@ namespace BA2LW.Core
         /// Get wallpaper global configuration.
         /// </summary>
         /// <returns></returns>
-        async UniTask<GlobalConfig> GetGlobalConfig(string configPath)
+        private async UniTask<GlobalConfig> GetGlobalConfig(string configPath)
         {
             try
             {
@@ -105,7 +118,7 @@ namespace BA2LW.Core
         /// Get Spine related settings.
         /// </summary>
         /// <returns></returns>
-        async UniTask<SpineSettings> GetSpineSettings(string settingPath)
+        private async UniTask<SpineSettings> GetSpineSettings(string settingPath)
         {
             try
             {
@@ -126,7 +139,7 @@ namespace BA2LW.Core
         /// </summary>
         /// <param name="fps"></param>
         /// <returns><paramref name="fps"/></returns>
-        int SetFrameRate(int fps)
+        private int SetFrameRate(int fps)
         {
             Application.targetFrameRate = fps;
             return fps;
@@ -136,15 +149,22 @@ namespace BA2LW.Core
         /// Setup logger configurations.
         /// </summary>
         // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        void SetLoggerConfig()
+        private void SetLoggerConfig()
         {
-            Log.Logger = new Logger(new LoggerConfig()
-                .MinimumLevel.Debug()
-                .CaptureStacktrace()
-                .RedirectUnityLogs()
-                .OutputTemplate("[{Timestamp}] <b>[{Level}]</b> <b>{Message}</b>{NewLine}<i>{Stacktrace}</i>")
-                .WriteTo.File($"{Path.Combine(Utility.GetApplicationPath(), m_LogFile)}", minLevel: LogLevel.Verbose)
-                .WriteTo.UnityEditorConsole());
+            Log.Logger = new Logger(
+                new LoggerConfig()
+                    .MinimumLevel.Debug()
+                    .CaptureStacktrace()
+                    // .RedirectUnityLogs()
+                    .OutputTemplate(
+                        "[{Timestamp}] <b>[{Level}]</b>{NewLine}<b>{Message}</b>{NewLine}<i>{Stacktrace}</i>"
+                    )
+                    .WriteTo.File(
+                        $"{Path.Combine(Utility.GetApplicationPath(), m_LogFile)}",
+                        minLevel: LogLevel.Verbose
+                    )
+                    .WriteTo.UnityEditorConsole()
+            );
         }
     }
 }
