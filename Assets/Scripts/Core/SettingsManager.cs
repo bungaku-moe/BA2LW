@@ -68,22 +68,17 @@ namespace BA2LW.Core
 
         private MainControl mainControl;
 
-        private void Awake()
+        private async void Awake()
         {
             mainControl = FindFirstObjectByType<MainControl>();
 
             SetLoggerConfig();
             DataPath = Path.Combine(Utility.GetApplicationPath(), m_DataDirectory);
             ConfigPath = Path.Combine(DataPath, m_ConfigFile);
-            Initialize();
+            await Initialize().ContinueWith(async () => await mainControl.Initialize());
         }
 
-        private void Start()
-        {
-            mainControl.Initialize();
-        }
-
-        public async void Initialize()
+        public async UniTask Initialize()
         {
             GlobalConfig = await GetGlobalConfig(ConfigPath);
 

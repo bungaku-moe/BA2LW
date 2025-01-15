@@ -56,7 +56,7 @@ namespace BA2LW.Core
         private bool isTalking;
         private int voiceIndex = 1,
             secondVoiceIndex = 1,
-            totalVoice = 4;
+            totalVoice;
         private SerializableDictionary<string, AudioClip> voiceList =
             new SerializableDictionary<string, AudioClip>();
 
@@ -130,7 +130,7 @@ namespace BA2LW.Core
             settingsManager = FindFirstObjectByType<SettingsManager>();
         }
 
-        public async void Initialize()
+        public async UniTask Initialize()
         {
             m_DebugText.text = string.Empty;
 
@@ -186,7 +186,6 @@ namespace BA2LW.Core
                 {
                     DirectoryInfo directoryInfo = new DirectoryInfo(voicePath);
                     FileInfo[] files = directoryInfo.GetFiles();
-                    totalVoice = GetTotalVoicesIndex(files.Select(f => f.Name).ToArray());
 
                     foreach (FileInfo file in files)
                     {
@@ -196,6 +195,8 @@ namespace BA2LW.Core
                             voiceList.Add(file.Name.Replace(".ogg", ""), clip);
                         }
                     }
+
+                    totalVoice = GetTalkTotalVoices(voiceList.Keys.ToArray());
                 }
             }
 
@@ -210,21 +211,20 @@ namespace BA2LW.Core
                 settings.scale,
                 m_SpineScaleMultiplier
             );
-            sprAnimation.AnimationState.Data.DefaultMix = 0.7f;
+            sprAnimation.AnimationState.Data.DefaultMix = 0.5f;
 
             // Start intro animation and disallow any interaction until it completed.
-            TrackEntry sprIntro = sprAnimation.AnimationState.AddAnimation(
+            TrackEntry sprIntro = sprAnimation.AnimationState.SetAnimation(
                 0,
                 "Start_Idle_01",
-                false,
-                0
+                false
             );
+            Log.Info($"Start character intro: {sprIntro}");
             sprIntro.Complete += trackEntry =>
             {
                 Log.Info($"End character intro: {trackEntry}");
                 allowInteraction = true;
             };
-            Log.Info($"Start character intro: {sprIntro}");
 
             // Queue idle animation and play it continuously
             sprAnimation.AnimationState.AddAnimation(0, "Idle_01", true, 0);
@@ -493,49 +493,49 @@ namespace BA2LW.Core
 
         public void Patting(bool patting)
         {
-            if (isTalking || !allowInteraction)
-                return;
-
-            Log.Info($"Patting: {patting}");
-            isPatting = patting;
-
-            if (patting)
+            if (!isTalking)
             {
-                if (!isFirstPat)
-                {
-                    isFirstPat = true;
+                Log.Info($"Patting: {patting}");
+                isPatting = patting;
 
-                    if (patA != null)
+                if (patting)
+                {
+                    if (!isFirstPat)
                     {
-                        sprAnimation.AnimationState.AddEmptyAnimation(1, 1f, 0);
-                        sprAnimation.AnimationState.AddAnimation(1, patA, false, 0);
-                    }
-                    if (patM != null)
-                    {
-                        sprAnimation.AnimationState.AddEmptyAnimation(2, 1f, 0);
-                        sprAnimation.AnimationState.AddAnimation(2, patA, false, 0);
-                        if (settings.pat.fixRotation)
-                            sprAnimation.AnimationState.AddEmptyAnimation(2, 1f, 0);
+                        isFirstPat = true;
+
+                        if (patA != null)
+                        {
+                            sprAnimation.AnimationState.AddEmptyAnimation(1, 0.25f, 0);
+                            sprAnimation.AnimationState.AddAnimation(1, patA, false, 0);
+                        }
+                        if (patM != null)
+                        {
+                            sprAnimation.AnimationState.AddEmptyAnimation(2, 0.25f, 0);
+                            sprAnimation.AnimationState.AddAnimation(2, patM, false, 0);
+                            // if (settings.pat.fixRotation)
+                            sprAnimation.AnimationState.AddEmptyAnimation(2, 0, 0);
+                        }
                     }
                 }
-            }
-            else
-            {
-                if (patEndA != null)
+                else
                 {
+                    if (patEndA != null)
+                    {
+                        sprAnimation.AnimationState.AddEmptyAnimation(1, 0.35f, 0);
+                        sprAnimation.AnimationState.AddAnimation(1, patEndA, false, 0);
+                    }
+                    if (patEndM != null)
+                    {
+                        sprAnimation.AnimationState.AddEmptyAnimation(2, 0.35f, 0);
+                        sprAnimation.AnimationState.AddAnimation(2, patEndM, false, 0);
+                    }
                     sprAnimation.AnimationState.AddEmptyAnimation(1, 0.35f, 0);
-                    sprAnimation.AnimationState.AddAnimation(1, patEndA, false, 0);
-                }
-                if (patEndM != null)
-                {
                     sprAnimation.AnimationState.AddEmptyAnimation(2, 0.35f, 0);
-                    sprAnimation.AnimationState.AddAnimation(2, patEndM, false, 0);
-                }
-                sprAnimation.AnimationState.AddEmptyAnimation(1, 0.3f, 0);
-                sprAnimation.AnimationState.AddEmptyAnimation(3, 0.3f, 0);
 
-                patEnding = true;
-                isFirstPat = false;
+                    patEnding = true;
+                    isFirstPat = false;
+                }
             }
         }
 
@@ -707,23 +707,38 @@ namespace BA2LW.Core
         /// </summary>
         /// <param name="fileNames"></param>
         /// <returns></returns>
-        private int GetTotalVoicesIndex(string[] fileNames)
+        private int GetTalkTotalVoices(string[] fileNames)
         {
-            HashSet<int> uniqueIndices = new HashSet<int>();
-
-            foreach (string fileName in fileNames)
+            int[] indexes = { 0, 0, 0 };
+            foreach (string name in fileNames)
             {
-                // Attempt to find "memoriallobby_" and extract the index after it.
-                int startIndex = fileName.IndexOf("memoriallobby_") + "memoriallobby_".Length;
-                if (startIndex > "memoriallobby_".Length - 1 && fileName.Length > startIndex)
+                Log.Info(name);
+                string[] nameSplit = name.Split('_');
+                int nameSplitLength = nameSplit.Length;
+
+                if (nameSplitLength > 1)
                 {
-                    string[] parts = fileName[startIndex..].Split('_');
-                    if (int.TryParse(parts[0], out int index))
-                        uniqueIndices.Add(index);
+                    if (int.TryParse(nameSplit[nameSplitLength - 1], out indexes[1]))
+                    {
+                        if (int.TryParse(nameSplit[nameSplitLength - 2], out indexes[2]))
+                        {
+                            if (indexes[2] > indexes[0] || indexes[2] == 0)
+                            {
+                                indexes[0]++;
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            indexes[0]++;
+                            continue;
+                        }
+                    }
+                    else
+                        continue;
                 }
             }
-
-            return uniqueIndices.Count;
+            return indexes[0];
         }
     }
 }
