@@ -12,6 +12,7 @@ using TMPro;
 using Unity.Logging;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace BA2LW.Core
@@ -20,33 +21,28 @@ namespace BA2LW.Core
     public class MainControl : MonoBehaviour
     {
         #region Components
-        [Header("Spine")]
-        [SerializeField]
-        private GameObject m_CharacterBase;
 
-        [SerializeField]
-        private GameObject m_BackgroundBase,
+        [Header("Spine")] [SerializeField] private GameObject m_CharacterBase;
+
+        [SerializeField] private GameObject m_BackgroundBase,
             m_RotationBase;
 
-        [SerializeField]
-        private Shader m_SpineShader;
+        [SerializeField] private Shader m_SpineShader;
 
-        [SerializeField, Range(0.01f, 0.02f)]
-        private float m_SpineScaleMultiplier = 0.0115f;
+        [SerializeField, Range(0.01f, 0.02f)] private float m_SpineScaleMultiplier = 0.0115f;
+
         private SkeletonAnimation sprAnimation,
             bgAnimation;
+
         private Bone lookBone,
             patBone;
 
-        [Header("Components")]
-        [SerializeField]
+        [Header("Components")] [SerializeField]
         private Button m_PatButton;
 
-        [SerializeField]
-        private Button m_TalkButton;
+        [SerializeField] private Button m_TalkButton;
 
-        [SerializeField]
-        private AudioSource m_BGMAudioSource,
+        [SerializeField] private AudioSource m_BGMAudioSource,
             m_SFXAudioSource,
             m_VoiceAudioSource;
 
@@ -54,17 +50,20 @@ namespace BA2LW.Core
 
         //! Talk
         private bool isTalking;
+
         private int voiceIndex = 1,
             secondVoiceIndex = 1,
             totalVoice;
+
         private SerializableDictionary<string, AudioClip> voiceList =
             new SerializableDictionary<string, AudioClip>();
 
         //! Look
         private bool isLooking,
             lookEnding;
-        private float lookSpeed = 4f,
-            lookRange = 1f;
+
+        [SerializeField] private float lookSpeed = 4f;
+        [SerializeField] private float lookRange = 1f;
 
         /// <summary>
         /// Current eyes looking rotation.
@@ -95,35 +94,50 @@ namespace BA2LW.Core
         private bool isPatting,
             isFirstPat,
             patEnding;
+
         private float patSpeed = 2f,
             patRange = 0.5f;
+
         private Vector3 pat;
+
         private string patA,
             patM,
             patEndA,
             patEndM;
 
-        [Header("UI")]
-        [SerializeField]
-        private Canvas m_MainCanvas;
+        [Header("UI")] [SerializeField] private Canvas m_MainCanvas;
 
-        [SerializeField]
-        private ScrollRect m_DebugWindow;
+        [SerializeField] private ScrollRect m_DebugWindow;
 
-        [SerializeField]
-        private TextMeshProUGUI m_DebugText;
+        [SerializeField] private TextMeshProUGUI m_DebugText;
 
-        [SerializeField]
-        private RectTransform m_BoneIndicatorPrefab;
+        [SerializeField] private RectTransform m_BoneIndicatorPrefab;
 
         private SettingsManager settingsManager;
         private GlobalConfig config => settingsManager.GlobalConfig;
         private SpineSettings settings => settingsManager.Settings;
-
         private InputManager inputManager;
+
+        // Accessors
+        private GameObject RotationBase => m_BackgroundBase;
+        private Dictionary<Bone, RectTransform> _bones = new Dictionary<Bone, RectTransform>();
+
+        private float LookRange
+        {
+            get => lookRange * 10;
+            set => lookRange = value;
+        }
+
+        private float LookSpeed
+        {
+            get => lookSpeed * 10;
+            set => lookSpeed = value / 10;
+        }
+
         #endregion
 
         #region Initialization
+
         private void Awake()
         {
             inputManager = FindFirstObjectByType<InputManager>();
@@ -142,7 +156,8 @@ namespace BA2LW.Core
 
             // Init properties value
             patRange = settings.pat.rotateRange;
-            lookRange = settings.lookRange;
+            lookRange = settings.eyes.lookRange;
+            lookSpeed = settings.eyes.lookSpeed;
 
             // Setup BGM Audio Source if enabled
             if (settings.bgm.enable)
@@ -224,6 +239,7 @@ namespace BA2LW.Core
             {
                 Log.Info($"End character intro: {trackEntry}");
                 allowInteraction = true;
+                SetupPatAndTalkButton();
             };
 
             // Queue idle animation and play it continuously
@@ -243,33 +259,26 @@ namespace BA2LW.Core
                     settings.scale,
                     m_SpineScaleMultiplier
                 );
-                bgAnimation.AnimationState.Data.DefaultMix = 0.7f;
+                bgAnimation.AnimationState.Data.DefaultMix = 0.5f;
 
-                TrackEntry bgIntro = sprAnimation.AnimationState.AddAnimation(
-                    0,
-                    $"Start_{settings.bg.state.name}",
-                    false,
-                    0
-                );
-                bgIntro.Complete += trackEntry => Log.Info($"End background intro: {trackEntry}");
-                Log.Info($"Start background intro: {bgIntro}");
+                // TrackEntry bgIntro = sprAnimation.AnimationState.SetAnimation(
+                //     0,
+                //     $"Start_{settings.bg.state.name}",
+                //     false
+                // );
+                // Log.Info($"Start background intro: {bgIntro}");
+                // bgIntro.Complete += trackEntry => Log.Info($"End background intro: {trackEntry}");
 
                 // Queue idle animation and play continuously
                 bgAnimation.AnimationState.AddAnimation(0, "Idle_01", true, 0);
 
                 if (settings.bg.state.more)
                     bgAnimation.AnimationState.SetAnimation(1, settings.bg.state.name, true);
-
-                if (config.debug)
-                {
-                    foreach (Spine.Animation animation in bgAnimation.skeleton.Data.Animations)
-                        m_DebugText.text += $"{animation.Name}\n";
-                }
             }
 
             // Debug Window
             Log.Info($"Debug Mode Enabled: {config.debug}");
-            Debug(config.debug);
+            IsDebug(config.debug);
 
             // Play Audio Source after all Spine initialized
             Log.Info("Enabling Audio\'s...");
@@ -280,6 +289,7 @@ namespace BA2LW.Core
 
             Log.Info("Registering Interaction Events...");
             sprAnimation.AnimationState.Event += HandleEvent;
+
             void HandleEvent(TrackEntry trackEntry, Spine.Event spineEvent)
             {
                 if (settings.talk.onlyTalk)
@@ -297,8 +307,8 @@ namespace BA2LW.Core
                             }
                             else if (
                                 voice
-                                    .ToLower()
-                                    .EndsWith($"memoriallobby_{voiceIndex - 1}_{secondVoiceIndex}")
+                                .ToLower()
+                                .EndsWith($"memoriallobby_{voiceIndex - 1}_{secondVoiceIndex}")
                             )
                             {
                                 Log.Info($"Talk: {trackEntry} -> {voice}");
@@ -325,98 +335,103 @@ namespace BA2LW.Core
             }
 
             Log.Info("Setting up Interaction Components...");
-            SetupPatAndTalkButton();
             SetupLook();
         }
+
         #endregion
 
         private void Update()
         {
-            if (!allowInteraction || isTalking)
-                return;
+            foreach (KeyValuePair<Bone, RectTransform> bone in _bones)
+            {
+                if (bone.Key == null || bone.Value == null)
+                    continue;
 
-            Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(
-                inputManager.PointerPosition
-            );
-            Vector2 mouseDownPoint = m_RotationBase.transform.InverseTransformPoint(
+                // Update the position of the bone indicator
+                bone.Value.localPosition = GetBoneScreenPosition(sprAnimation, bone.Key);
+            }
+
+            Vector2 mousePosition = Mouse.current.position.ReadValue();
+            Vector3 worldMousePosition = Camera.main.ScreenToWorldPoint(mousePosition);
+            Vector3 mouseDownPoint = m_RotationBase.transform.InverseTransformPoint(
                 worldMousePosition
             );
 
-            // Patting...
-            if (isPatting)
+            if (!isTalking)
             {
-                mouseDownPoint = m_RotationBase.transform.TransformPoint(
-                    new Vector2(
-                        Mathf.Clamp(mouseDownPoint.x, pat.x - patRange, pat.x + patRange),
-                        pat.y
-                    )
-                );
-                patBone.SetPositionSkeletonSpace(mouseDownPoint);
-            }
-            else if (patEnding)
-            {
-                // If the absolute difference between patBone.X and pat.x is <= to the threshold or tolerance...
-                if (Mathf.Abs(patBone.X - pat.x) <= 0.1f)
+                if (isPatting)
                 {
-                    patEnding = false;
-                    patBone.SetToSetupPose();
-                }
-                else
-                {
-                    Vector3 patBonePosition = Vector3.MoveTowards(
-                        patBone.GetWorldPosition(sprAnimation.transform),
-                        m_RotationBase.transform.TransformPoint(pat),
-                        patSpeed * Time.smoothDeltaTime
-                    );
-                    patBone.SetPositionSkeletonSpace(patBonePosition);
-                }
-            }
+                    if (mouseDownPoint.x - pat.x >= patRange)
+                    {
+                        mouseDownPoint.x = pat.x + patRange;
+                    }
+                    else if (mouseDownPoint.x - pat.x <= -patRange)
+                    {
+                        mouseDownPoint.x = pat.x - patRange;
+                    }
 
-            // Looking...
-            if (isLooking)
-            {
-                float sx = (mouseDownPoint.y - look.y) / (mouseDownPoint.x - look.x);
-                float sy = (mouseDownPoint.x - look.x) / (mouseDownPoint.y - look.y);
+                    mouseDownPoint.y = pat.y;
 
-                if (mouseDownPoint.x - look.x >= lookRange && Math.Abs(sx) <= 1)
-                {
-                    mouseDownPoint.y = look.y + lookRange * sx;
-                    mouseDownPoint.x = look.x + lookRange;
+                    mouseDownPoint = RotationBase.transform.TransformPoint(mouseDownPoint);
+
+                    patBone.SetPositionSkeletonSpace(mouseDownPoint);
                 }
-                else if (mouseDownPoint.x - look.x <= -lookRange && Math.Abs(sx) <= 1)
+                else if (patEnding)
                 {
-                    mouseDownPoint.y = look.y - lookRange * sx;
-                    mouseDownPoint.x = look.x - lookRange;
-                }
-                else if (mouseDownPoint.y - look.y >= lookRange && Math.Abs(sx) > 1)
-                {
-                    mouseDownPoint.y = look.y + lookRange;
-                    mouseDownPoint.x = look.x + lookRange * sy;
-                }
-                else if (mouseDownPoint.y - look.y <= -lookRange && Math.Abs(sx) > 1)
-                {
-                    mouseDownPoint.y = look.y - lookRange;
-                    mouseDownPoint.x = look.x - lookRange * sy;
+                    if (math.abs(patBone.X - pat.x) <= 0.1f)
+                    {
+                        patEnding = false;
+                        patBone.SetToSetupPose();
+                    }
+                    else
+                    {
+                        Vector3 tempPosition = Vector3.MoveTowards(patBone.GetWorldPosition(sprAnimation.transform),
+                            RotationBase.transform.TransformPoint(pat), patSpeed * Time.deltaTime);
+                        patBone.SetPositionSkeletonSpace(tempPosition);
+                    }
                 }
 
-                mouseDownPoint = m_RotationBase.transform.TransformPoint(mouseDownPoint);
-                lookBone.SetPositionSkeletonSpace(mouseDownPoint);
-            }
-            else if (lookEnding)
-            {
-                if (math.abs(lookBone.X - look.x) <= 0.1f)
+                if (isLooking)
                 {
-                    lookEnding = false;
-                    lookBone.SetToSetupPose();
+                    // Get current screen-space position of the eye origin
+                    Vector3 screenLook = Camera.main.WorldToScreenPoint(RotationBase.transform.TransformPoint(look));
+
+                    // Calculate offset direction from eye origin to mouse
+                    Vector3 direction = (Vector3)mousePosition - screenLook;
+
+                    // Clamp that direction vector to a maximum radius (in pixels)
+                    Vector3 clampedDirection = Vector2.ClampMagnitude(direction, LookRange);
+
+                    // Compute the target eye screen position
+                    Vector3 targetScreenPos = screenLook + clampedDirection;
+
+                    // Convert the target screen point to world space
+                    Vector3 worldTarget =
+                        Camera.main.ScreenToWorldPoint(new Vector3(targetScreenPos.x, targetScreenPos.y, screenLook.z));
+
+                    // Smooth move the eye toward the target
+                    Vector3 currentEyeWorld = lookBone.GetWorldPosition(sprAnimation.transform);
+                    Vector3 smoothWorldTarget = Vector3.MoveTowards(currentEyeWorld, worldTarget,
+                        LookSpeed * Time.smoothDeltaTime);
+
+                    // Convert to skeleton space
+                    lookBone.SetPositionSkeletonSpace(RotationBase.transform.InverseTransformPoint(smoothWorldTarget));
                 }
-                else
+                else if (lookEnding)
                 {
-                    Vector3 lookBonePosition = Vector3.MoveTowards(
-                        lookBone.GetWorldPosition(sprAnimation.transform),
-                        m_RotationBase.transform.TransformPoint(look),
-                        lookSpeed * Time.smoothDeltaTime
-                    );
-                    lookBone.SetPositionSkeletonSpace(lookBonePosition);
+                    Vector3 current = lookBone.GetWorldPosition(sprAnimation.transform);
+                    Vector3 target = RotationBase.transform.TransformPoint(look);
+
+                    if (Vector3.Distance(current, target) <= 0.01f)
+                    {
+                        lookEnding = false;
+                        lookBone.SetToSetupPose();
+                    }
+                    else
+                    {
+                        Vector3 tempPosition = Vector3.MoveTowards(current, target, LookSpeed * Time.smoothDeltaTime);
+                        lookBone.SetPositionSkeletonSpace(RotationBase.transform.InverseTransformPoint(tempPosition));
+                    }
                 }
             }
         }
@@ -451,25 +466,28 @@ namespace BA2LW.Core
             }
         }
 
-        public void Looking(bool state)
+        public void Looking(bool isLooking)
         {
             if (isTalking || !allowInteraction)
                 return;
 
-            Log.Info($"Look At Mouse: {state}");
-            isLooking = state;
+            Log.Info($"Look At Mouse: {isLooking}");
+            this.isLooking = isLooking;
 
-            if (state)
+            if (isLooking)
             {
                 if (lookA != null)
                 {
                     sprAnimation.AnimationState.AddEmptyAnimation(1, 0.5f, 0);
-                    sprAnimation.AnimationState.AddAnimation(1, lookA, false, 0);
+                    // sprAnimation.AnimationState.AddAnimation(1, lookA, false, 0);
+                    sprAnimation.AnimationState.SetAnimation(1, lookA, false);
                 }
+
                 if (lookM != null)
                 {
                     sprAnimation.AnimationState.AddEmptyAnimation(2, 0.5f, 0);
-                    sprAnimation.AnimationState.AddAnimation(2, lookM, false, 0);
+                    // sprAnimation.AnimationState.AddAnimation(2, lookM, false, 0);
+                    sprAnimation.AnimationState.SetAnimation(2, lookM, false);
                 }
             }
             else
@@ -479,11 +497,13 @@ namespace BA2LW.Core
                     sprAnimation.AnimationState.AddEmptyAnimation(1, 1f, 0);
                     sprAnimation.AnimationState.AddAnimation(1, lookEndA, false, 0);
                 }
+
                 if (lookEndM != null)
                 {
                     sprAnimation.AnimationState.AddEmptyAnimation(2, 1f, 0);
                     sprAnimation.AnimationState.AddAnimation(2, lookEndM, false, 0);
                 }
+
                 sprAnimation.AnimationState.AddEmptyAnimation(1, 0.5f, 0);
                 sprAnimation.AnimationState.AddEmptyAnimation(2, 0.5f, 0);
 
@@ -509,6 +529,7 @@ namespace BA2LW.Core
                             sprAnimation.AnimationState.AddEmptyAnimation(1, 0.25f, 0);
                             sprAnimation.AnimationState.AddAnimation(1, patA, false, 0);
                         }
+
                         if (patM != null)
                         {
                             sprAnimation.AnimationState.AddEmptyAnimation(2, 0.25f, 0);
@@ -525,11 +546,13 @@ namespace BA2LW.Core
                         sprAnimation.AnimationState.AddEmptyAnimation(1, 0.35f, 0);
                         sprAnimation.AnimationState.AddAnimation(1, patEndA, false, 0);
                     }
+
                     if (patEndM != null)
                     {
                         sprAnimation.AnimationState.AddEmptyAnimation(2, 0.35f, 0);
                         sprAnimation.AnimationState.AddAnimation(2, patEndM, false, 0);
                     }
+
                     sprAnimation.AnimationState.AddEmptyAnimation(1, 0.35f, 0);
                     sprAnimation.AnimationState.AddEmptyAnimation(2, 0.35f, 0);
 
@@ -556,7 +579,11 @@ namespace BA2LW.Core
             m_RotationBase.transform.localRotation = Quaternion.Euler(0, 0, patAngle);
 
             if (settings.rotateCamera)
+            {
                 Camera.main.transform.localRotation = Quaternion.Euler(0, 0, patAngle);
+                leftEye = SpineHelper.BoneScreenPosition(sprAnimation, settings.bones.eyeL);
+                rightEye = SpineHelper.BoneScreenPosition(sprAnimation, settings.bones.eyeR);
+            }
             else
             {
                 m_PatButton.transform.localEulerAngles = new Vector3(0, 0, patAngle);
@@ -566,11 +593,6 @@ namespace BA2LW.Core
             Vector3 halo = SpineHelper.BoneScreenPosition(
                 sprAnimation,
                 settings.bones.halo,
-                m_MainCanvas.GetComponent<RectTransform>()
-            );
-            Vector3 head = SpineHelper.BoneScreenPosition(
-                sprAnimation,
-                "Head_Rot",
                 m_MainCanvas.GetComponent<RectTransform>()
             );
             Vector3 neck = SpineHelper.BoneScreenPosition(
@@ -584,16 +606,15 @@ namespace BA2LW.Core
                 m_MainCanvas.GetComponent<RectTransform>()
             );
 
+            // Pat Button
             Vector3 patButtonPosition = SpineHelper.GetMidpoint(halo, neck);
             Vector2 patButtonSize = SpineHelper.GetDistance(halo, neck) * Vector2.one;
-
-            // Pat Button
             m_PatButton.transform.GetComponent<RectTransform>().sizeDelta = patButtonSize;
             m_PatButton.transform.localPosition = patButtonPosition;
 
             // Talk Button
             m_TalkButton.transform.GetComponent<RectTransform>().sizeDelta =
-                SpineHelper.GetDistance(neck, hip) * Vector2.one * 1.2f;
+                SpineHelper.GetDistance(neck, hip) * (Vector2.one * 1.2f);
             m_TalkButton.transform.localPosition = SpineHelper.GetMidpoint(neck, hip);
 
             foreach (Spine.Animation animation in sprAnimation.skeleton.Data.Animations)
@@ -649,7 +670,11 @@ namespace BA2LW.Core
             );
         }
 
-        private void Debug(bool debug)
+        /// <summary>
+        /// Show Debug Window?
+        /// </summary>
+        /// <param name="debug"></param>
+        private void IsDebug(bool debug)
         {
             if (!debug)
                 return;
@@ -657,7 +682,18 @@ namespace BA2LW.Core
             m_PatButton.GetComponent<Image>().color = new Color(0, 255, 253, 0.35f);
             m_TalkButton.GetComponent<Image>().color = new Color(255, 0, 0, 0.35f);
 
-            m_DebugText.text += "<b>Events:</b>\n";
+            m_DebugText.text += "<b>Animations (Spr):</b>\n";
+            foreach (Spine.Animation animation in sprAnimation.skeleton.Data.Animations)
+                m_DebugText.text += $"● {animation.Name}\n";
+
+            if (settings.bg.isSpine)
+            {
+                m_DebugText.text += "\n<b>Animations (Bg):</b>\n";
+                foreach (Spine.Animation animation in bgAnimation.skeleton.Data.Animations)
+                    m_DebugText.text += $"● {animation.Name}\n";
+            }
+
+            m_DebugText.text += "\n<b>Events:</b>\n";
             foreach (EventData e in sprAnimation.skeleton.Data.Events)
                 m_DebugText.text += $"● {e.Name}\n";
 
@@ -684,22 +720,42 @@ namespace BA2LW.Core
                     boneIndicator.gameObject.name = boneName;
                     boneIndicator.GetComponentInChildren<TextMeshProUGUI>().text = boneName;
 
-                    // Convert bone's world position to screen position
-                    Vector3 boneWorldPosition = sprAnimation.transform.TransformPoint(
-                        bone.GetWorldPosition(sprAnimation.transform)
-                    );
-                    Vector3 screenPosition = Camera.main.WorldToScreenPoint(boneWorldPosition);
-
-                    // Convert screen position to UI canvas position
-                    RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                        m_DebugWindow.transform as RectTransform,
-                        screenPosition,
-                        Camera.main,
-                        out Vector2 localPoint
-                    );
-                    boneIndicator.localPosition = localPoint;
+                    // // Convert bone's world position to screen position
+                    // Vector3 boneWorldPosition = sprAnimation.transform.TransformPoint(
+                    //     bone.GetWorldPosition(sprAnimation.transform)
+                    // );
+                    // Vector3 screenPosition = Camera.main.WorldToScreenPoint(boneWorldPosition);
+                    //
+                    // // Convert screen position to UI canvas position
+                    // RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    //     m_DebugWindow.transform as RectTransform,
+                    //     screenPosition,
+                    //     Camera.main,
+                    //     out Vector2 localPoint
+                    // );
+                    _bones.Add(bone, boneIndicator);
+                    boneIndicator.localPosition = GetBoneScreenPosition(sprAnimation, bone);
                 }
             }
+        }
+
+        private Vector2 GetBoneScreenPosition(SkeletonAnimation skeletonAnimation, Bone bone)
+        {
+            // Convert bone's world position to screen position
+            Vector3 boneWorldPosition = skeletonAnimation.transform.TransformPoint(
+                bone.GetWorldPosition(skeletonAnimation.transform)
+            );
+            Vector3 screenPosition = Camera.main.WorldToScreenPoint(boneWorldPosition);
+
+            // Convert screen position to UI canvas position
+            RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                m_DebugWindow.transform as RectTransform,
+                screenPosition,
+                Camera.main,
+                out var localPoint
+            );
+
+            return localPoint;
         }
 
         /// <summary>
@@ -709,10 +765,9 @@ namespace BA2LW.Core
         /// <returns></returns>
         private int GetTalkTotalVoices(string[] fileNames)
         {
-            int[] indexes = { 0, 0, 0 };
+            int[] indexes = { -1, 0, 0 };
             foreach (string name in fileNames)
             {
-                Log.Info(name);
                 string[] nameSplit = name.Split('_');
                 int nameSplitLength = nameSplit.Length;
 
@@ -722,7 +777,7 @@ namespace BA2LW.Core
                     {
                         if (int.TryParse(nameSplit[nameSplitLength - 2], out indexes[2]))
                         {
-                            if (indexes[2] > indexes[0] || indexes[2] == 0)
+                            if (indexes[2] > indexes[0])
                             {
                                 indexes[0]++;
                                 continue;
@@ -738,6 +793,7 @@ namespace BA2LW.Core
                         continue;
                 }
             }
+
             return indexes[0];
         }
     }

@@ -21,6 +21,7 @@ namespace BA2LW.Utils
         {
             try
             {
+                Debug.Log(url);
                 using UnityWebRequest uwr = UnityWebRequest.Get(url);
                 UniTaskCompletionSource<string> tcs = new UniTaskCompletionSource<string>();
 
@@ -50,6 +51,7 @@ namespace BA2LW.Utils
         {
             try
             {
+                Debug.Log(url);
                 using UnityWebRequest uwr = UnityWebRequest.Get(url);
                 UniTaskCompletionSource<byte[]> tcs = new UniTaskCompletionSource<byte[]>();
 
@@ -58,7 +60,7 @@ namespace BA2LW.Utils
                     if (uwr.result == UnityWebRequest.Result.Success)
                         tcs.TrySetResult(uwr.downloadHandler.data);
                     else
-                        tcs.TrySetException(new Exception(uwr.error));
+                        tcs.TrySetException(new Exception($"Requesting \"{url}\"\n{uwr.error}"));
                 };
 
                 return await tcs.Task;
@@ -79,6 +81,7 @@ namespace BA2LW.Utils
         {
             try
             {
+                Debug.Log(url);
                 using UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(
                     url,
                     GetAudioType(url)

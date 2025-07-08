@@ -156,18 +156,11 @@ namespace BA2LW.Utils
         /// <returns>Bone screen position.</returns>
         public static Vector2 BoneScreenPosition(SkeletonAnimation skeletonAnimation, string bone)
         {
-            // try
-            // {
             return Camera.main.WorldToScreenPoint(
                 skeletonAnimation
                     .skeleton.FindBone(bone)
                     .GetWorldPosition(skeletonAnimation.transform)
             );
-            // }
-            // catch
-            // {
-            //     return Vector2.negativeInfinity;
-            // }
         }
 
         /// <summary>
@@ -302,20 +295,20 @@ namespace BA2LW.Utils
         /// <summary>
         /// Calculates the angle in degrees between two vectors.
         /// </summary>
-        /// <param name="l">The first vector.</param>
-        /// <param name="r">The second vector.</param>
+        /// <param name="a">The first vector.</param>
+        /// <param name="b">The second vector.</param>
         /// <returns>The angle in degrees between the two vectors.</returns>
         public static float GetAngle(Vector3 a, Vector3 b)
         {
-            // Vector3 dir = l - r;
-            // dir = dir.normalized;
-            // float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            // angle = angle < 0 ? angle + 360 : angle;
-            // return angle;
+            Vector3 dir = a - b;
+            dir = dir.normalized;
+            float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            angle = angle < 0 ? angle + 360 : angle;
+            return angle;
 
-            Vector3 direction = (a - b).normalized;
-            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-            return (angle + 360) % 360;
+            // Vector3 direction = (a - b).normalized;
+            // float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+            // return (angle + 360) % 360;
         }
     }
 }

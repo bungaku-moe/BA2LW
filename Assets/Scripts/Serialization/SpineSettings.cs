@@ -13,36 +13,34 @@ namespace BA2LW.Serialization
         public string student;
 
         /// <summary>
-        /// Camera rotation is equated with Pat angle.
-        /// </summary>
-        public bool rotateCamera;
-
-        [Tooltip("Spine scale")]
-        /// <summary>
-        /// Spine Animation scale.
-        /// </summary>
-        public float scale;
-
-        /// <summary>
-        /// How far the eyes rotate when looking.
-        /// </summary>
-        public float lookRange;
-
-        /// <summary>
         /// List of textures file name without extension.
         /// </summary>
         public List<string> textures = new List<string>();
 
         /// <summary>
+        /// Spine Animation scale.
+        /// </summary>
+        [Tooltip("Spine scale")]
+        public float scale;
+
+        /// <summary>
+        /// Camera rotation is equated with Pat angle.
+        /// </summary>
+        public bool rotateCamera;
+
+        /// <summary>
         /// Required Bones to calculate Pat & Talk button.
         /// </summary>
         public Bones bones;
-        public Bg bg;
+
+        public Eyes eyes;
 
         /// <summary>
         /// Pat settings.
         /// </summary>
         public Pat pat;
+
+        public Bg bg;
 
         /// <summary>
         /// Background music settings.
@@ -50,6 +48,13 @@ namespace BA2LW.Serialization
         public Bgm bgm;
         public Sfx sfx;
         public Talk talk;
+
+        [Serializable]
+        public class Eyes
+        {
+            public float lookRange;
+            public float lookSpeed;
+        }
 
         [Serializable]
         public class Pat
